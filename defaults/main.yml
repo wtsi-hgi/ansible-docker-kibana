@@ -1,0 +1,15 @@
+# Variables that have no defaults and must be set:
+#   docker_kibana_elasticsearch_url:
+#     [str] URL of the Elasticsearch cluster to connect to (including protocol and port)
+#
+#   docker_kibana_elasticsearch_username:
+#     [str] username of Elasticsearch user
+#
+#   docker_kibana_elasticsearch_password:
+#     [str] password of Elasticsearch user
+
+---
+
+docker_kibana_docker_build_files_directory: /usr/share/kibana/docker
+
+docker_kibana_apt_cache_valid_time: 3600

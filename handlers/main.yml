@@ -1,0 +1,8 @@
+---
+
+- name: restart Kibana
+  become: yes
+  docker_container:
+    name: kibana
+    restart: yes
+  listen: restart_kibana

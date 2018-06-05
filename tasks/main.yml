@@ -1,0 +1,64 @@
+---
+
+- name: ensure required variables have been set
+  no_log: true
+  assert:
+    that:
+      - item | mandatory
+  with_items:
+    - "{{ docker_kibana_elasticsearch_url }}"
+    - "{{ docker_kibana_elasticsearch_username }}"
+    - "{{ docker_kibana_elasticsearch_password }}"
+
+- name: install apt prerequisites
+  become: yes
+  apt:
+    name: "{{ item }}"
+    update_cache: yes
+    cache_valid_time: "{{ docker_kibana_apt_cache_valid_time }}"
+  with_items:
+    - python-pip
+
+- name: install pip prerequisites
+  become: yes
+  pip:
+    name: "{{ item }}"
+  with_items:
+    - docker-py
+
+- name: copy Docker build files
+  become: yes
+  copy:
+    src: files/kibana-docker-build/
+    dest: "{{ docker_kibana_docker_build_files_directory }}"
+
+- name: build Kibana + Search Guard image
+  become: yes
+  docker_image:
+    name: ansible-docker-kibana/kibana
+    path: "{{ docker_kibana_docker_build_files_directory }}"
+  notify: restart_kibana
+
+- name: create Kibana container
+  become: yes
+  docker_container:
+    name: kibana
+    image: ansible-docker-kibana/kibana
+    state: present
+    published_ports:
+      - "5601:5601"
+    env:
+      SERVER_HOST: 0.0.0.0
+      ELASTICSEARCH_URL: "http://{{ docker_kibana_elasticsearch_url }}:9200"
+      ELASTICSEARCH_USERNAME: "{{ docker_kibana_elasticsearch_username }}"
+      ELASTICSEARCH_PASSWORD: "{{ docker_kibana_elasticsearch_password }}"
+      SEARCHGUARD_BASICAUTH_ENABLED: true
+
+- name: flush handlers to trigger restart of Kibana if required
+  meta: flush_handlers
+
+- name: start Kibana container
+  become: yes
+  docker_container:
+    name: kibana
+    state: started
